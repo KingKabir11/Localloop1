@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LocalLoop — Interactive 3D Venue Exploration Game</title>
+  <meta name="description" content="LocalLoop 3D Venue Exploration & Connected Mobile Experience">
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Local Three.js script with CDN fallback -->
+  <script src="vendor/three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+
+  <!-- Top Scene Navigator & Audio Toggle -->
+  <header class="top-nav-bar">
+    <div class="brand-badge">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#b43418">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+        <circle cx="12" cy="12" r="4" fill="currentColor" />
+      </svg>
+      <span>LocalLoop 3D</span>
+    </div>
+
+    <button class="scene-step-pill active" data-scene="SCENE_1_PHONE">1. Spot Details</button>
+    <button class="scene-step-pill" data-scene="SCENE_2_3_ROOFTOP">2-3. 3D Rooftop (Lit Up)</button>
+    <button class="scene-step-pill" data-scene="SCENE_4_BOOKING">4. Booking Flow</button>
+    <button class="scene-step-pill" data-scene="SCENE_5_ENDING">5. Ending</button>
+
+    <button id="btn-audio-toggle" class="audio-toggle-btn" title="Toggle Music">🎵 <span class="audio-btn-text">Music</span></button>
+  </header>
+
+  <!-- Floating Audio Prompt Banner -->
+  <div id="audio-start-banner" class="audio-start-banner">
+    <span>🎵</span>
+    <span>Click anywhere to start Rooftop Acoustic Music</span>
+    <span>🔊</span>
+  </div>
+
+  <!-- Flash Effect & Vignette -->
+  <div id="screen-flash" class="screen-flash"></div>
+  <div class="vignette-overlay"></div>
+
+  <!-- 3D Three.js Container -->
+  <div id="canvas-container"></div>
+
+  <!-- ========================================================
+       SMARTPHONE SIMULATOR CONTAINER
+       ======================================================== -->
+  <div id="phone-container">
+    <div class="smartphone-body">
+      <!-- Dynamic Island -->
+      <div class="phone-notch">
+        <div class="notch-sensor"></div>
+        <div class="notch-camera"></div>
+      </div>
+
+      <!-- Status Bar (11:30, Signal, Battery) -->
+      <div class="phone-status-bar">
+        <span>11:30</span>
+        <div style="display: flex; gap: 6px; align-items: center; font-size: 11px;">
+          <span>5G</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      <!-- Phone Screen Scrollable Area -->
+      <div id="phone-screen" class="phone-screen">
+
+        <!-- Nav Bar inside Phone -->
+        <div class="app-nav-bar">
+          <div class="nav-back-title">
+            <span id="phone-back-btn" style="cursor: pointer; font-size: 18px;">←</span>
+            <span id="phone-nav-title">Spot Details</span>
+          </div>
+          <div class="nav-actions">
+            <button class="icon-circle-btn" title="Share">🔗</button>
+            <button class="icon-circle-btn" title="Bookmark">🔖</button>
+          </div>
+        </div>
+
+        <!-- ==============================================
+             SCREEN 1: SPOT DETAILS (MATCHING IMAGE 1)
+             ============================================== -->
+        <div id="discovery-view">
+          <!-- Hero Image with Badges -->
+          <div class="spot-hero-container">
+            <img class="spot-hero-img" src="assets/images/hero_terrace.png" alt="The Terrace Social Rooftop">
+            <div class="spot-badge-left">SELLING FAST - 8 SPOTS LEFT</div>
+            <div class="spot-badge-right">★ 4.9 (184)</div>
+          </div>
+
+          <!-- Spot Information Body -->
+          <div class="spot-info-body">
+            <div class="category-tag-label">ACOUSTIC SESSION</div>
+            <h2 class="spot-title">Rooftop Live Music</h2>
+
+            <div class="spot-venue-line">
+              <span>The Terrace Social</span>
+              <span class="verified-icon">✓</span>
+            </div>
+
+            <div class="spot-meta-details">
+              <span>📍 1.2 km away - Indiranagar</span>
+              <span>•</span>
+              <span>🕒 Today - 8:00 PM – 11:30 PM</span>
+              <span>•</span>
+              <span>🏷️ From ₹499 / person</span>
+            </div>
+
+            <!-- Tags -->
+            <div class="tags-scroll-row">
+              <span class="spot-pill-tag">Live Music</span>
+              <span class="spot-pill-tag">Rooftop</span>
+              <span class="spot-pill-tag">Social</span>
+              <span class="spot-pill-tag">Craft Cocktails</span>
+            </div>
+
+            <!-- "Explore in 3D" Feature Card -->
+            <div id="explore-3d-card" class="explore-3d-card" onclick="if(window.localLoopGame){ window.localLoopGame.startTransitionToRooftop(); }">
+              <div class="card-left-content">
+                <div class="cube-icon-box">⬡</div>
+                <div class="card-text">
+                  <h4>Explore in 3D</h4>
+                  <p>Interactive layout & seating</p>
+                </div>
+              </div>
+              <button id="preview-3d-btn" class="preview-btn-pill">
+                <span>Preview</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sticky Bottom Booking Bar -->
+          <div class="bottom-sticky-bar">
+            <div class="price-unit-col">
+              <span class="price-big-text">₹499 <span style="font-size: 11px; font-weight: normal; color: #64748b;">/ guest</span></span>
+              <span class="price-small-sub">Includes cover & 1 house brew</span>
+            </div>
+            <button class="icon-circle-btn" style="border-radius: 12px; height: 38px; width: 38px;">🔖</button>
+            <button id="btn-book-experience" class="book-experience-cta">
+              <span>Book experience</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==============================================
+             SCREEN 2: STEP 1 OF 3 (GUEST & SLOT SELECTION)
+             ============================================== -->
+        <div id="booking-step1-view" style="display: none;">
+          <div class="step-progress-header">
+            <div class="step-indicator-row">
+              <span>STEP 1 OF 3</span>
+              <span style="color: #64748b; font-size: 10px;">Guest & Slot Selection</span>
+            </div>
+            <div class="step-progress-bar">
+              <div class="step-progress-fill" style="width: 33%;"></div>
+            </div>
+          </div>
+
+          <div class="booking-content-scroll">
+            <!-- Event Thumbnail Summary -->
+            <div class="mini-event-summary-card">
+              <img src="assets/images/hero_terrace.png" class="mini-thumb" alt="Terrace">
+              <div class="mini-info">
+                <span style="font-size: 9px; color: var(--primary-terracotta); font-weight: 800;">Curated Gig</span>
+                <h4>Rooftop Live Music</h4>
+                <p>The Terrace Social - Indiranagar • ₹499 / guest</p>
+              </div>
+            </div>
+
+            <!-- Select Date & Slot -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 800; color: #0f172a;">📅 Select Date & Slot</span>
+                <span style="font-size: 9px; color: var(--primary-terracotta); font-weight: 700;">● Fast Filling</span>
+              </div>
+              <div class="date-pill-row">
+                <div class="date-select-pill active" data-val="Today, 24 Oct">
+                  <span>TODAY</span>
+                  <span style="font-size: 12px;">24 Oct, Fri</span>
+                </div>
+                <div class="date-select-pill" data-val="Tomorrow, 25 Oct">
+                  <span>SAT</span>
+                  <span style="font-size: 12px;">25 Tomorrow</span>
+                </div>
+                <div class="date-select-pill" data-val="Sunday, 26 Oct">
+                  <span>SUN</span>
+                  <span style="font-size: 12px;">26 Weekend</span>
+                </div>
+                <div class="date-select-pill" data-val="Monday, 27 Oct">
+                  <span>MON</span>
+                  <span style="font-size: 12px;">27 Acoustic</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Time Slots -->
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="time-slot-card active" data-val="8:00 PM – 10:00 PM">
+                <div>
+                  <div class="slot-time-title">8:00 PM – 10:00 PM <span style="background: #fed7aa; color: #9a3412; font-size: 9px; padding: 2px 6px; border-radius: 6px;">Set 1</span></div>
+                  <div class="slot-sub-desc">Acoustic Soul & Indie Folk Originals</div>
+                  <div class="slot-urgency">● Only 8 spots remaining</div>
+                </div>
+                <span style="color: var(--primary-terracotta); font-weight: 900;">✓</span>
+              </div>
+
+              <div class="time-slot-card" data-val="10:15 PM – 12:00 AM">
+                <div>
+                  <div class="slot-time-title">10:15 PM – 12:00 AM <span style="background: #e2e8f0; color: #475569; font-size: 9px; padding: 2px 6px; border-radius: 6px;">Set 2</span></div>
+                  <div class="slot-sub-desc">Late Twilight Set & Rooftop Ambient Jam</div>
+                  <div style="font-size: 9px; color: #10b981; font-weight: 700; margin-top: 2px;">14 spots available</div>
+                </div>
+                <span style="color: #cbd5e1; font-size: 12px;">○</span>
+              </div>
+            </div>
+
+            <!-- Guests Counter -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 800; color: #0f172a;">Guests</div>
+                  <div style="font-size: 10px; color: #64748b;">Table allocation adapts to party size</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <button id="btn-guest-minus" class="icon-circle-btn" style="width: 26px; height: 26px;">−</button>
+                  <span id="guest-count-val" style="font-size: 13px; font-weight: 800; color: #0f172a;">2</span>
+                  <button id="btn-guest-plus" class="icon-circle-btn" style="width: 26px; height: 26px;">+</button>
+                </div>
+              </div>
+              <div id="guest-calc-note" style="margin-top: 6px; font-size: 10px; color: #9a3412; font-weight: 600;">
+                ₹499 x 2 = ₹998 • Includes 1 welcome artisanal brew or signature craft cocktail per guest.
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Review Bar -->
+          <div class="bottom-sticky-bar">
+            <div class="price-unit-col">
+              <span style="font-size: 10px; color: #64748b;">Total: <strong class="subtotal-display" style="color: #0f172a; font-size: 14px;">₹998</strong></span>
+              <span style="font-size: 10px; color: #64748b;"><span class="guest-count-text">2 Guests</span> • Today 8:00 PM</span>
+            </div>
+            <button id="btn-review-booking" class="book-experience-cta">
+              <span>Review Booking</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==============================================
+             SCREEN 3: STEP 2 OF 3 (INSTANT CONFIRMATION)
+             ============================================== -->
+        <div id="booking-step2-view" style="display: none;">
+          <div class="step-progress-header">
+            <div class="step-indicator-row">
+              <span>STEP 2 OF 3</span>
+              <span style="color: #64748b; font-size: 10px;">Instant Confirmation</span>
+            </div>
+            <div class="step-progress-bar">
+              <div class="step-progress-fill" style="width: 66%;"></div>
+            </div>
+          </div>
+
+          <div class="booking-content-scroll">
+            <!-- Hero Summary -->
+            <div class="confirm-hero-card">
+              <img src="assets/images/hero_terrace.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Terrace">
+              <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); display: flex; flex-direction: column; justify-content: flex-end; padding: 10px;">
+                <span style="background: rgba(255,255,255,0.9); color: var(--primary-terracotta); font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 8px; width: fit-content;">● SELLING FAST</span>
+                <h4 style="font-size: 13px; font-weight: 800; color: #fff; margin-top: 2px;">Rooftop Live Music</h4>
+                <p style="font-size: 10px; color: #cbd5e1;">The Terrace Social - 842 100ft Rd, Indiranagar</p>
+                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                  <span style="background: rgba(255,255,255,0.2); color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 6px;">+ Live Acoustic Set</span>
+                  <span style="background: rgba(255,255,255,0.2); color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 6px;">Confirmed Table</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Schedule & Seating -->
+            <div class="schedule-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; font-weight: 800; color: #0f172a;">📅 Schedule & Seating</span>
+                <span style="font-size: 10px; color: var(--primary-terracotta); font-weight: 700; cursor: pointer;">Edit ✎</span>
+              </div>
+              <div class="schedule-row">
+                <span style="color: #64748b;">WHEN</span>
+                <span style="font-weight: 700;">Today | 24 Oct • 8:00–10:00 PM</span>
+              </div>
+              <div class="schedule-row">
+                <span style="color: #64748b;">GUESTS & DECK</span>
+                <span style="font-weight: 700;"><span class="guest-count-text">2 Guests</span> | Front Stage Deck</span>
+              </div>
+              <div style="font-size: 9px; color: #64748b; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 2px; line-height: 1.4;">
+                ⓘ <strong>House Policy:</strong> Entry closes at 8:30 PM sharp. 21+ only after 9:00 PM. Smart casual dress code recommended.
+              </div>
+            </div>
+
+            <!-- Lead Guest Info -->
+            <div class="lead-guest-card">
+              <div class="guest-avatar-circle">AS</div>
+              <div style="flex: 1;">
+                <div style="font-size: 11px; font-weight: 800; color: #0f172a;">Aanya Sharma</div>
+                <div style="font-size: 10px; color: #64748b;">+91 98765 43210 • aanya@example.com</div>
+              </div>
+              <span style="font-size: 10px; color: var(--primary-terracotta); font-weight: 700;">Edit ✎</span>
+            </div>
+          </div>
+
+          <!-- Bottom Continue to Payment Bar -->
+          <div class="bottom-sticky-bar">
+            <div class="price-unit-col">
+              <span style="font-size: 10px; color: #64748b;">TO PAY</span>
+              <span class="total-display" style="font-size: 16px; font-weight: 900; color: #0f172a;">₹1,006</span>
+              <span style="font-size: 9px; color: #64748b;">all incl.</span>
+            </div>
+            <button id="btn-continue-payment" class="book-experience-cta">
+              <span>Continue to Payment</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==============================================
+             SCREEN 4: STEP 3 OF 3 (PAYMENT VIA UPI)
+             ============================================== -->
+        <div id="booking-step3-view" style="display: none;">
+          <div class="step-progress-header">
+            <div class="step-indicator-row">
+              <span>STEP 3 OF 3</span>
+              <span style="color: #64748b; font-size: 10px;">Payment</span>
+            </div>
+            <div class="step-progress-bar">
+              <div class="step-progress-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="booking-content-scroll">
+            <div class="payment-security-badge">
+              <span>🔒</span>
+              <span>100% Encrypted & Safe Checkout • PCI-DSS v4.0</span>
+            </div>
+
+            <div class="amount-pay-box">
+              <div>
+                <span style="font-size: 10px; color: #64748b; font-weight: 700;">AMOUNT TO PAY</span>
+                <div class="total-display" style="font-size: 20px; font-weight: 900; color: #0f172a;">₹1,006</div>
+                <span style="font-size: 9px; color: #64748b;">incl. taxes</span>
+              </div>
+              <span style="font-size: 11px; font-family: monospace; font-weight: 700; color: #ea580c; background: #fff7ed; padding: 4px 8px; border-radius: 8px;">⏱ 09:41</span>
+            </div>
+
+            <div style="font-size: 11px; font-weight: 800; color: #0f172a; margin-top: 4px;">Instant UPI <span style="font-size: 9px; color: #15803d; font-weight: normal;">(Zero Fee)</span></div>
+
+            <div class="upi-options-list">
+              <div class="upi-row selected">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 16px;">💳</span>
+                  <span>Google Pay (GPay)</span>
+                </div>
+                <span style="color: var(--primary-terracotta); font-weight: 900;">●</span>
+              </div>
+
+              <div class="upi-row">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 16px;">🟣</span>
+                  <span>PhonePe</span>
+                </div>
+                <span style="color: #cbd5e1;">○</span>
+              </div>
+
+              <div class="upi-row">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 16px;">🔵</span>
+                  <span>Paytm UPI</span>
+                </div>
+                <span style="color: #cbd5e1;">○</span>
+              </div>
+
+              <div class="upi-row">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 16px;">@</span>
+                  <span>Enter UPI ID / VPA</span>
+                </div>
+                <span style="color: #cbd5e1;">▾</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Pay Button -->
+          <div class="bottom-sticky-bar">
+            <button id="btn-pay-upi" class="book-experience-cta" style="width: 100%; justify-content: center;">
+              <span>🔒 Pay</span>
+              <span class="total-display">₹1,006</span>
+              <span>via Google Pay</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==============================================
+             SCREEN 5: STEP 3 OF 3 (PAYMENT COMPLETED)
+             ============================================== -->
+        <div id="booking-step4-view" style="display: none;">
+          <div class="step-progress-header">
+            <div class="step-indicator-row">
+              <span style="color: #15803d;">STEP 3 OF 3</span>
+              <span style="color: #15803d; font-size: 10px;">Payment Completed</span>
+            </div>
+            <div class="step-progress-bar">
+              <div class="step-progress-fill" style="width: 100%; background: #22c55e;"></div>
+            </div>
+          </div>
+
+          <div class="booking-content-scroll">
+            <div class="all-set-celebration">
+              <div class="celebration-check-circle">✓</div>
+              <h3 style="font-size: 18px; font-weight: 900; color: #0f172a;">You're all set, Aanya!</h3>
+              <p style="font-size: 10px; color: #64748b; margin-top: 2px;">Booking Ref: <strong>#EXP-84920</strong> • Confirmation sent via WhatsApp & Email</p>
+            </div>
+
+            <!-- Confirmed Digital Pass -->
+            <div class="ticket-confirmed-card">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <img src="assets/images/hero_terrace.png" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover;" alt="Venue">
+                <div>
+                  <h4 style="font-size: 13px; font-weight: 800; color: #0f172a;">The Terrace Social</h4>
+                  <p style="font-size: 11px; color: var(--primary-terracotta); font-weight: 700;">Rooftop Live Music</p>
+                  <p style="font-size: 9px; color: #64748b;">Acoustic Sessions • VIP Deck</p>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 6px;">
+                <span style="background: #fef2f2; color: #991b1b; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">● VIP Front Stage Deck</span>
+                <span style="background: #f1f5f9; color: #334155; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><span class="guest-count-text">2 Guests</span></span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px dashed #e2e8f0; padding-top: 8px; font-size: 10px;">
+                <div>
+                  <span style="color: #64748b;">DATE</span>
+                  <div style="font-weight: 700;">Today, 24 Oct</div>
+                  <span style="color: #94a3b8; font-size: 9px;">Friday evening</span>
+                </div>
+                <div>
+                  <span style="color: #64748b;">TIME</span>
+                  <div style="font-weight: 700;">8:00 PM onwards</div>
+                  <span style="color: #94a3b8; font-size: 9px;">Doors open 7:30 PM</span>
+                </div>
+                <div>
+                  <span style="color: #64748b;">LOCATION</span>
+                  <div style="font-weight: 700;">100ft Rd, Indiranagar</div>
+                  <span style="color: #94a3b8; font-size: 9px;">Bengaluru</span>
+                </div>
+                <div>
+                  <span style="color: #64748b;">TOTAL PAID</span>
+                  <div class="total-display" style="font-weight: 800; color: #15803d;">₹1,006</div>
+                  <span style="color: #15803d; font-size: 9px;">UPI Confirmed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom View in My Bookings Bar -->
+          <div class="bottom-sticky-bar">
+            <button id="btn-view-bookings" class="book-experience-cta" style="width: 100%; justify-content: center;">
+              <span>View in My Bookings</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCENE 2 & 3: 3D ROOFTOP EXPLORATION GAME HUD
+       ======================================================== -->
+  <div id="game-hud">
+    <div class="crosshair"></div>
+
+    <div class="compass-bar">
+      <div class="compass-center-indicator"></div>
+      <div id="compass-tape" class="compass-tape">
+        <span>N</span> • <span>NE</span> • <span>E</span> • <span>SE</span> • <span>S</span> • <span>SW</span> • <span>W</span> • <span>NW</span> • <span>N</span>
+      </div>
+    </div>
+
+    <div class="minimap-container">
+      <canvas id="minimap-canvas" class="minimap-canvas" width="140" height="140"></canvas>
+      <div class="minimap-label">Rooftop Radar</div>
+    </div>
+
+    <div class="controls-guide-box">
+      <div class="controls-guide-title">3D Game Controls</div>
+      <div class="key-badge-row">
+        <div><span class="key-badge">WASD</span> Walk</div>
+        <div><span class="key-badge">Mouse</span> Look</div>
+      </div>
+      <div class="key-badge-row">
+        <div><span class="key-badge">Shift</span> Sprint</div>
+        <div><span class="key-badge">E</span> Inspect</div>
+        <div><span class="key-badge">Q</span> Exit</div>
+      </div>
+    </div>
+
+    <div id="interaction-prompt" class="interaction-prompt">
+      <span class="interact-key">E</span>
+      <span id="interact-text" class="interact-text">Inspect Live Stage</span>
+    </div>
+
+    <button id="exit-experience-btn" class="exit-experience-btn">
+      <span>🚪</span>
+      <span>Exit Experience / Return to Phone</span>
+    </button>
+  </div>
+
+  <!-- Hotspot Modal -->
+  <div id="hotspot-modal-backdrop" class="hotspot-modal-backdrop">
+    <div class="hotspot-modal-card">
+      <div class="hotspot-hero-img-box">
+        <img id="modal-hotspot-img" src="assets/images/hero_terrace.png" alt="Venue Zone">
+        <div id="modal-hotspot-category" class="hotspot-badge-overlay">Live Stage</div>
+        <button id="close-hotspot-modal" class="close-modal-btn">✕</button>
+      </div>
+
+      <div class="hotspot-modal-body">
+        <h3 id="modal-hotspot-title" class="hotspot-modal-title">Live Music Stage</h3>
+        <p id="modal-hotspot-desc" class="hotspot-modal-desc"></p>
+        <div id="modal-features-list" class="hotspot-features-list"></div>
+        <div class="hotspot-actions-row">
+          <button id="modal-resume-btn" class="modal-resume-btn">Continue Exploring</button>
+          <button id="modal-book-now-btn" class="modal-book-now-btn">Book This Zone</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 5: Ending Showcase -->
+  <div id="ending-showcase">
+    <div class="ending-brand-card">
+      <svg class="brand-emblem-large" viewBox="0 0 24 24" fill="#b43418">
+        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm2-11.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-2 4a3.5 3.5 0 0 0-3.5 3.5h7A3.5 3.5 0 0 0 12 12.5z"/>
+      </svg>
+      <h1 class="ending-title">LocalLoop</h1>
+      <p class="ending-tagline">“Discover it. <span>Experience it.</span> Book it.”</p>
+      <p class="ending-story-recap">
+        From sofa discovery to first-person rooftop exploration and confirmed ticket booking.
+        LocalLoop merges physical 3D venue immersion with effortless social reservation.
+      </p>
+
+      <div class="ending-nav-buttons">
+        <button id="btn-replay-experience" class="ending-nav-btn btn-primary-ending">🔁 Replay Full Experience</button>
+        <button id="btn-jump-3d" class="ending-nav-btn btn-outline-ending">🎮 Explore Rooftop 3D Again</button>
+        <button id="btn-jump-phone" class="ending-nav-btn btn-outline-ending">📱 Return to Phone View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Bundle -->
+  <script src="js/bundle.js"></script>
+</body>
+</html>

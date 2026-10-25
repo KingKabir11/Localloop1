@@ -1,0 +1,23 @@
+{
+  "name": "localloop-3d-venue-game",
+  "version": "1.0.0",
+  "description": "LocalLoop — Interactive 3D Venue Exploration Game",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "node build_bundle.js",
+    "preview": "node server.js"
+  },
+  "keywords": [
+    "localloop",
+    "threejs",
+    "webgl",
+    "3d-game",
+    "venue-exploration",
+    "ui-ux-prototype"
+  ],
+  "author": "LocalLoop Team",
+  "license": "MIT"
+}
